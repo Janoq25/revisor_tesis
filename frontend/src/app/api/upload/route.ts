@@ -18,13 +18,13 @@ export async function POST(req: NextRequest) {
     const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `tesis/${uniqueFileName}`;
-    
+
     // Convert to ArrayBuffer then Buffer for Supabase upload via JS SDK in Node
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
     let archivoUrl = '';
-    
+
     if (isSupabaseConfigured && supabase) {
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('tesis-bucket') // Asume que tienes un bucket llamado 'tesis-bucket'
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         console.error("Supabase Upload Error:", uploadError);
         return NextResponse.json({ success: false, error: "Failed to upload to Supabase" }, { status: 500 });
       }
-      
+
       const { data: publicUrlData } = supabase.storage.from('tesis-bucket').getPublicUrl(filePath);
       archivoUrl = publicUrlData.publicUrl;
     } else {
@@ -82,9 +82,29 @@ export async function POST(req: NextRequest) {
             tipoArchivo: fileExt
           })
         });
-      } catch (webhookError) {
+      } catch (webhookError: any) {
         console.error("n8n Webhook Error:", webhookError);
-        // We continue even if webhook fails, we can retry later from dashboard
+        // If webhook fails, mark as error so it doesn't stay in queue forever
+        await prisma.tesis.update({
+          where: { id: tesis.id },
+          data: { estado: 'ERROR' }
+        });
+        await prisma.revision.create({
+          data: {
+            tesisId: tesis.id,
+            estadoGeneral: 'Error',
+            puntuacionGeneral: 0,
+            tiempoProcesamiento: 0,
+            observaciones: [
+              {
+                seccion: "Sistema",
+                estado: "Error",
+                comentario: "No se pudo contactar con n8n. El servidor de análisis podría estar inactivo.",
+                sugerencia: "Revisa la conexión de n8n o contacta al administrador."
+              }
+            ]
+          }
+        });
       }
     }
 

@@ -34,7 +34,8 @@ services:
   gotenberg:
     image: gotenberg/gotenberg:8
     restart: always
-    # No se expone puerto al host; n8n lo llama por la red docker.
+    ports:
+      - "3001:3000" # Expuesto al host para que el Next.js local pueda alcanzarlo
     command:
       - "gotenberg"
       - "--api-port=3000"
@@ -51,7 +52,7 @@ services:
       - ./frontend/.env
     # Debe coincidir con usuario/clave/postgres definidos en .env.postgres
     environment:
-      DATABASE_URL: postgresql://n8n:bSofs0Fov7G0OBd6Bg6Bx2lB@postgres:5432/revision_tesis?schema=public
+      DATABASE_URL: postgresql://tesis_user:tesis_secure_2026@postgres:5432/revision_tesis?schema=public
       N8N_WEBHOOK_URL: http://n8n:5678/webhook-test/revision-tesis
       ARCHIVO_PUBLIC_BASE_URL: http://frontend:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000

@@ -21,23 +21,27 @@ export function FileUploader({ onUploadSuccess }: FileUploaderProps) {
     setSuccess(false);
 
     try {
-      // Create FormData to send the file
-      const file = acceptedFiles[0];
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('autor', 'Tesista Anónimo'); // Placeholder para autor
+      // Create a promise for each file to upload them
+      const uploadPromises = acceptedFiles.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('autor', 'Tesista Anónimo'); // Placeholder para autor
 
-      // Post to our API route
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Error al subir el archivo ${file.name}`);
+        }
+        return data;
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al subir el archivo');
-      }
+      // Wait for all uploads to finish
+      await Promise.all(uploadPromises);
 
       setSuccess(true);
       if (onUploadSuccess) onUploadSuccess();
@@ -54,8 +58,8 @@ export function FileUploader({ onUploadSuccess }: FileUploaderProps) {
       'application/pdf': ['.pdf'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       'text/plain': ['.txt']
-    },
-    maxFiles: 1
+    }
+    // removed maxFiles: 1 to allow multiple uploads
   });
 
   return (
@@ -122,7 +126,7 @@ export function FileUploader({ onUploadSuccess }: FileUploaderProps) {
       {success && (
         <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--success)' }}>
           <CheckCircle size={20} />
-          <span>Archivo subido con éxito. El sistema de IA ha comenzado la revisión.</span>
+          <span>Archivo(s) subido(s) con éxito. El sistema de IA ha comenzado la revisión.</span>
         </div>
       )}
     </div>

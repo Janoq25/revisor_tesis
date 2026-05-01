@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FileUploader } from "@/components/ui/FileUploader";
+import { QueueTable } from "@/components/ui/QueueTable";
 
 export default function Home() {
   const [refreshQueue, setRefreshQueue] = useState(0);
@@ -53,28 +54,7 @@ export default function Home() {
         </div>
 
         <div>
-          {/* Gestor de colas provisional (QueueTable placeholder) */}
-          <div className="glass-card" style={{ height: "100%" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-              <h3 style={{ margin: 0 }}>Cola de Procesamiento</h3>
-              <span className="badge badge-default">Actualizando...</span>
-            </div>
-            
-            <div style={{ 
-              display: "flex", 
-              flexDirection: "column", 
-              alignItems: "center", 
-              justifyContent: "center",
-              height: "calc(100% - 3rem)",
-              color: "#94a3b8",
-              textAlign: "center"
-            }}>
-              <p>Las tesis subidas aparecerán aquí.</p>
-              <p style={{ fontSize: "0.875rem", opacity: 0.7, marginTop: "0.5rem" }}>
-                El historial se refresca automáticamente.
-              </p>
-            </div>
-          </div>
+          <QueueTable refreshTrigger={refreshQueue} />
         </div>
       </div>
     </div>

@@ -22,27 +22,25 @@ export async function POST(req: NextRequest) {
       data: { estado: finalEstado }
     });
 
-    // 2. Guardar revisión si no fue error del pipeline (idem si n8n reintenta callback)
-    if (finalEstado === "COMPLETADO") {
-      await prisma.revision.upsert({
-        where: { tesisId },
-        create: {
-          tesisId,
-          estadoGeneral: String(estado ?? ""),
-          puntuacionGeneral: Number.isFinite(punt) ? punt : 0,
-          tiempoProcesamiento: Number.isFinite(tiempo) ? tiempo : 0,
-          reportePdfUrl,
-          observaciones: observaciones ?? [],
-        },
-        update: {
-          estadoGeneral: String(estado ?? ""),
-          puntuacionGeneral: Number.isFinite(punt) ? punt : 0,
-          tiempoProcesamiento: Number.isFinite(tiempo) ? tiempo : 0,
-          reportePdfUrl,
-          observaciones: observaciones ?? [],
-        },
-      });
-    }
+    // 2. Guardar revisión siempre, incluso si hay error, para ver los detalles
+    await prisma.revision.upsert({
+      where: { tesisId },
+      create: {
+        tesisId,
+        estadoGeneral: String(estado ?? ""),
+        puntuacionGeneral: Number.isFinite(punt) ? punt : 0,
+        tiempoProcesamiento: Number.isFinite(tiempo) ? tiempo : 0,
+        reportePdfUrl,
+        observaciones: observaciones ?? [],
+      },
+      update: {
+        estadoGeneral: String(estado ?? ""),
+        puntuacionGeneral: Number.isFinite(punt) ? punt : 0,
+        tiempoProcesamiento: Number.isFinite(tiempo) ? tiempo : 0,
+        reportePdfUrl,
+        observaciones: observaciones ?? [],
+      },
+    });
 
     return NextResponse.json({ success: true, message: "Callback processed successfully" });
 

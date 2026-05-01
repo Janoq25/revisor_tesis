@@ -1,160 +1,100 @@
-"use client";
+import React from 'react';
+import { prisma } from '@/lib/prisma';
+import DashboardClient from './DashboardClient';
 
-import React, { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Activity, CheckCircle, AlertTriangle, XOctagon, Clock } from 'lucide-react';
+export const dynamic = 'force-dynamic';
 
-// Mock data (será reemplazado por la API luego)
-const approvalData = [
-  { name: 'Aprobadas', value: 45, color: '#10b981' },
-  { name: 'Observadas', value: 30, color: '#f59e0b' },
-  { name: 'Rechazadas', value: 10, color: '#ef4444' },
-];
+export default async function DashboardPage() {
+  const revisiones = await prisma.revision.findMany({
+    include: { tesis: true },
+    orderBy: { createdAt: 'asc' } // chronological for performance chart
+  });
 
-const sectionsData = [
-  { name: 'Introducción', observaciones: 15 },
-  { name: 'Marco Teórico', observaciones: 42 },
-  { name: 'Metodología', observaciones: 35 },
-  { name: 'Resultados', observaciones: 18 },
-  { name: 'Conclusiones', observaciones: 24 },
-  { name: 'Referencias', observaciones: 56 },
-];
+  // Calculate KPIs
+  const totalRevisadas = revisiones.length;
+  let aprobadas = 0;
+  let observadas = 0;
+  let rechazadas = 0;
+  let totalTiempo = 0;
+  let totalPuntuacion = 0;
+  let totalObservacionesIncompletas = 0;
 
-const performanceData = [
-  { semana: 'Sem 1', promedio: 65 },
-  { semana: 'Sem 2', promedio: 68 },
-  { semana: 'Sem 3', promedio: 72 },
-  { semana: 'Sem 4', promedio: 70 },
-  { semana: 'Sem 5', promedio: 75 },
-  { semana: 'Sem 6', promedio: 78 },
-];
+  // For charts
+  const sectionCounts: Record<string, number> = {};
+  const performanceByWeek: Record<string, { sum: number; count: number }> = {};
 
-function KpiCard({ title, value, icon: Icon, colorClass, trend }: any) {
-  return (
-    <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h4 style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>{title}</h4>
-        <div style={{ padding: '0.5rem', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.05)' }} className={colorClass}>
-          <Icon size={20} />
-        </div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem' }}>
-        <span style={{ fontSize: '2rem', fontWeight: 'bold', lineHeight: 1 }}>{value}</span>
-        {trend && (
-          <span style={{ fontSize: '0.875rem', color: trend > 0 ? 'var(--success)' : 'var(--error)' }}>
-            {trend > 0 ? '+' : ''}{trend}%
-          </span>
-        )}
-      </div>
-    </div>
-  );
+  revisiones.forEach((rev) => {
+    // 1. Approval Data
+    const estado = rev.estadoGeneral?.toLowerCase() || '';
+    if (estado === 'aprobado' || estado === 'completado') aprobadas++;
+    else if (estado === 'rechazado' || estado === 'error') rechazadas++;
+    else observadas++;
+
+    // 2. Metrics
+    totalTiempo += rev.tiempoProcesamiento || 0;
+    totalPuntuacion += rev.puntuacionGeneral || 0;
+
+    // 3. Sections Data
+    let obsArray: any[] = [];
+    if (rev.observaciones) {
+      try {
+        obsArray = typeof rev.observaciones === 'string' ? JSON.parse(rev.observaciones) : rev.observaciones;
+        if (!Array.isArray(obsArray)) obsArray = [obsArray];
+      } catch (e) {}
+    }
+
+    obsArray.forEach(obs => {
+      // count as 'observacion' if it has error/incompleto etc.
+      const estadoObs = obs.estado?.toLowerCase() || '';
+      if (estadoObs !== 'ok') {
+        totalObservacionesIncompletas++;
+        const seccion = obs.seccion || 'General';
+        sectionCounts[seccion] = (sectionCounts[seccion] || 0) + 1;
+      }
+    });
+
+    // 4. Performance Data (group by ISO week or simple date format)
+    // For simplicity, let's group by "YYYY-MM-DD" or just day since we might not have weeks of data
+    const date = rev.createdAt;
+    const label = `${date.getDate()}/${date.getMonth() + 1}`; // e.g. "28/4"
+    if (!performanceByWeek[label]) {
+      performanceByWeek[label] = { sum: 0, count: 0 };
+    }
+    performanceByWeek[label].sum += rev.puntuacionGeneral || 0;
+    performanceByWeek[label].count += 1;
+  });
+
+  const tasaAprobacion = totalRevisadas > 0 ? Math.round((aprobadas / totalRevisadas) * 100) : 0;
+  const observacionesPromedio = totalRevisadas > 0 ? (totalObservacionesIncompletas / totalRevisadas).toFixed(1) : "0";
+  const tiempoPromedio = totalRevisadas > 0 ? Math.round(totalTiempo / totalRevisadas) : 0;
+
+  const approvalData = [
+    { name: 'Aprobadas', value: aprobadas, color: '#10b981' },
+    { name: 'Observadas', value: observadas, color: '#f59e0b' },
+    { name: 'Rechazadas', value: rechazadas, color: '#ef4444' },
+  ].filter(d => d.value > 0); // Hide empty sections
+
+  const sectionsData = Object.entries(sectionCounts)
+    .map(([name, count]) => ({ name, observaciones: count }))
+    .sort((a, b) => b.observaciones - a.observaciones)
+    .slice(0, 6); // Top 6 sections
+
+  const performanceData = Object.entries(performanceByWeek).map(([label, data]) => ({
+    label,
+    promedio: Math.round(data.sum / data.count)
+  }));
+
+  const dashboardData = {
+    kpis: {
+      totalRevisadas,
+      tasaAprobacion: tasaAprobacion.toString(),
+      observacionesPromedio: observacionesPromedio.toString(),
+      tiempoPromedio: tiempoPromedio.toString(),
+    },
+    approvalData,
+    sectionsData,
+    performanceData
+  };
+
+  return <DashboardClient data={dashboardData} />;
 }
-
-export default function DashboardPage() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null; // Avoid hydration mismatch for recharts
-
-  return (
-    <div className="animate-fade-in" style={{ maxWidth: "1200px", margin: "0 auto" }}>
-      <header style={{ marginBottom: "2.5rem", display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ color: "var(--foreground)", marginBottom: "0.5rem" }}>
-            Dashboard Analítico
-          </h1>
-          <p style={{ color: "#94a3b8", fontSize: "1.125rem" }}>
-            Visión general del rendimiento y estadísticas de las revisiones de tesis.
-          </p>
-        </div>
-        <div className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
-          <Activity size={16} />
-          <span>Sistema Operativo</span>
-        </div>
-      </header>
-
-      {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
-        <KpiCard title="Total Revisadas" value="85" icon={FileText} trend={12} colorClass="text-primary" />
-        <KpiCard title="Tasa de Aprobación" value="53%" icon={CheckCircle} trend={5} colorClass="text-success" />
-        <KpiCard title="Observaciones Promedio" value="14.2" icon={AlertTriangle} trend={-2} colorClass="text-warning" />
-        <KpiCard title="Tiempo de Proc." value="45s" icon={Clock} colorClass="text-accent" />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', marginBottom: '2rem' }}>
-        {/* Donut Chart */}
-        <div className="glass-card" style={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Estado de Revisiones</h3>
-          <div style={{ flex: 1, minHeight: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={approvalData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={80}
-                  outerRadius={110}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {approvalData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  contentStyle={{ backgroundColor: 'var(--secondary)', border: '1px solid var(--border)', borderRadius: '8px' }}
-                  itemStyle={{ color: 'var(--foreground)' }}
-                />
-                <Legend verticalAlign="bottom" height={36} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Bar Chart */}
-        <div className="glass-card" style={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Frecuencia de Observaciones por Sección</h3>
-          <div style={{ flex: 1, minHeight: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={sectionsData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} angle={-25} textAnchor="end" height={60} />
-                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
-                <RechartsTooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  contentStyle={{ backgroundColor: 'var(--secondary)', border: '1px solid var(--border)', borderRadius: '8px' }}
-                />
-                <Bar dataKey="observaciones" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Line Chart */}
-      <div className="glass-card" style={{ height: '350px', display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Evolución del Rendimiento Promedio</h3>
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={performanceData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="semana" stroke="#94a3b8" />
-              <YAxis domain={[0, 100]} stroke="#94a3b8" />
-              <RechartsTooltip 
-                contentStyle={{ backgroundColor: 'var(--secondary)', border: '1px solid var(--border)', borderRadius: '8px' }}
-              />
-              <Line type="monotone" dataKey="promedio" stroke="var(--accent)" strokeWidth={3} dot={{ r: 5, fill: 'var(--accent)' }} activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Para usar FileText que no está importado arriba
-import { FileText } from 'lucide-react';
