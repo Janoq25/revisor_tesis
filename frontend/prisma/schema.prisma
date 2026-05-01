@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tesis {
+  id              String         @id @default(cuid())
+  titulo          String
+  autor           String
+  archivoUrl      String         // URL del archivo original (en Supabase)
+  archivoNombre   String
+  tipoArchivo     String         // pdf, docx, txt
+  tamanioBytes    Int
+  estado          EstadoRevision @default(EN_COLA)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  revision        Revision?
+}
+
+model Revision {
+  id                  String   @id @default(cuid())
+  tesisId             String   @unique
+  tesis               Tesis    @relation(fields: [tesisId], references: [id])
+  estadoGeneral       String   // "Aprobado", "Observado", "Rechazado"
+  puntuacionGeneral   Float
+  tiempoProcesamiento Int      // en segundos
+  reportePdfUrl       String?
+  observaciones       Json     // Array de observaciones por sección
+  createdAt           DateTime @default(now())
+}
+
+enum EstadoRevision {
+  EN_COLA
+  PROCESANDO
+  COMPLETADO
+  ERROR
+}

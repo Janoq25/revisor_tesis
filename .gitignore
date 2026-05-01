@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Environment
+.env
+.env*
+.env.local
+.env.production
+frontend/.env
+!*.example
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Prisma
+frontend/prisma/*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Uploads (local)
+uploads/
