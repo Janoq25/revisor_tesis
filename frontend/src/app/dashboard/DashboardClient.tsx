@@ -101,11 +101,11 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       </div>
 
       {/* Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
         {/* Donut Chart */}
-        <div className="clean-card" style={{ height: '380px', display: 'flex', flexDirection: 'column' }}>
+        <div className="clean-card" style={{ height: '380px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <h3 style={{ marginBottom: '1.5rem', fontSize: '0.95rem', fontWeight: 600, color: '#1e293b' }}>Estado de Revisiones</h3>
-          <div style={{ flex: 1, minHeight: 0 }}>
+          <div style={{ flex: 1, minHeight: 0, minWidth: 0, position: 'relative' }}>
             {data.approvalData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -125,9 +125,9 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         </div>
 
         {/* Bar Chart */}
-        <div className="clean-card" style={{ height: '380px', display: 'flex', flexDirection: 'column' }}>
+        <div className="clean-card" style={{ height: '380px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <h3 style={{ marginBottom: '1.5rem', fontSize: '0.95rem', fontWeight: 600, color: '#1e293b' }}>Observaciones por Sección</h3>
-          <div style={{ flex: 1, minHeight: 0 }}>
+          <div style={{ flex: 1, minHeight: 0, minWidth: 0, position: 'relative' }}>
             {data.sectionsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.sectionsData} margin={{ top: 5, right: 20, left: 0, bottom: 20 }}>
@@ -152,9 +152,9 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       </div>
 
       {/* Line Chart */}
-      <div className="clean-card" style={{ height: '320px', display: 'flex', flexDirection: 'column' }}>
+      <div className="clean-card" style={{ height: '320px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <h3 style={{ marginBottom: '1.5rem', fontSize: '0.95rem', fontWeight: 600, color: '#1e293b' }}>Evolución del Rendimiento Promedio</h3>
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <div style={{ flex: 1, minHeight: 0, minWidth: 0, position: 'relative' }}>
           {data.performanceData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.performanceData} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
