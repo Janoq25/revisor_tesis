@@ -15,41 +15,80 @@ export default function Home() {
   return (
     <div className="animate-fade-in" style={{ maxWidth: "1200px", margin: "0 auto" }}>
       <header style={{ marginBottom: "2.5rem" }}>
-        <h1 style={{ color: "var(--foreground)", marginBottom: "0.5rem" }}>
-          Upload Space
+        <h1 style={{ 
+          fontFamily: "var(--font-poppins), sans-serif", 
+          fontSize: "2rem",
+          color: "#1e293b",
+          marginBottom: "0.5rem",
+          fontWeight: 700,
+        }}>
+          Subir Tesis
         </h1>
-        <p style={{ color: "#94a3b8", fontSize: "1.125rem", maxWidth: "600px" }}>
-          Sube los proyectos de tesis para su revisión automática. El sistema extraerá el contenido, lo evaluará usando IA y generará un reporte detallado.
+        <p style={{ 
+          color: "var(--text-muted)", 
+          fontSize: "1rem", 
+          maxWidth: "600px",
+          lineHeight: "1.6"
+        }}>
+          Sube los documentos de tesis para su revisión automática con IA. Recibirás un reporte detallado con observaciones y sugerencias.
         </p>
       </header>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           <FileUploader onUploadSuccess={handleUploadSuccess} />
           
-          <div className="glass-card" style={{ marginTop: "2rem" }}>
-            <h3 style={{ marginBottom: "1rem", fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className="clean-card">
+            <h3 style={{ 
+              marginBottom: "1.25rem", 
+              fontSize: "1rem",
+              fontWeight: 600,
+              color: "#1e293b",
+              display: "flex", 
+              alignItems: "center", 
+              gap: "0.5rem",
+            }}>
               <span style={{ 
                 display: "inline-flex", 
                 alignItems: "center", 
                 justifyContent: "center", 
-                width: "24px", 
-                height: "24px", 
+                width: "28px", 
+                height: "28px", 
                 borderRadius: "50%", 
-                backgroundColor: "rgba(59, 130, 246, 0.2)",
-                color: "var(--primary)",
-                fontSize: "0.875rem"
-              }}>ℹ</span>
+                background: "var(--primary-gradient)",
+                color: "white",
+                fontSize: "0.75rem",
+                flexShrink: 0,
+              }}>✓</span>
               Esquema de Evaluación Activo
             </h3>
-            <p style={{ fontSize: "0.875rem", marginBottom: "0.75rem" }}>
-              El sistema utilizará el esquema predeterminado: <strong>UNT Ingeniería de Sistemas</strong>.
-            </p>
-            <ul style={{ fontSize: "0.875rem", paddingLeft: "1.25rem", color: "#94a3b8", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <li>Estructura formal completa</li>
-              <li>Referencias APA 7</li>
-              <li>Árbol de Problemas y Objetivos</li>
-            </ul>
+            
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {[
+                { title: "Estructura Formal", desc: "Revisión de portada, índice, abstract y capítulos.", color: "#1abc9c" },
+                { title: "Normas APA 7", desc: "Validación de citas, referencias y formato bibliográfico.", color: "#1dc4e9" },
+                { title: "Árbol de Problemas", desc: "Coherencia entre problema, objetivos e hipótesis.", color: "#a78bfa" },
+              ].map((schema, idx) => (
+                <div key={idx} style={{
+                  padding: "0.875rem 1rem",
+                  borderRadius: "12px",
+                  background: "#F8FAFC",
+                  border: "1px solid var(--border)",
+                  borderLeft: `4px solid ${schema.color}`,
+                  transition: "all 0.2s ease",
+                  cursor: "default",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--card-shadow-hover)'; e.currentTarget.style.background = 'white'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.background = '#F8FAFC'; }}>
+                  <div style={{ color: "#1e293b", fontFamily: "var(--font-poppins), sans-serif", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.2rem" }}>
+                    {schema.title}
+                  </div>
+                  <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                    {schema.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/ui/Sidebar";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: '--font-poppins' });
 
 export const metadata: Metadata = {
-  title: "Tesis AI | Revisor Automático",
-  description: "Sistema automatizado para revisar tesis aplicando IA",
+  title: "Tesis AI | Dashboard",
+  description: "Sistema inteligente para la revisión de tesis",
 };
 
 export default function RootLayout({
@@ -17,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${poppins.variable}`}>
         <div className="app-container">
           <Sidebar />
           <main className="main-content">
