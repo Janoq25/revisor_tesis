@@ -1,20 +1,6 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:18
-    restart: always
-    env_file: .env.postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   n8n:
     image: n8nio/n8n:2.19.1
     restart: always
@@ -27,9 +13,6 @@ services:
       - "5678:5678"
     volumes:
       - n8n_data:/home/node/.n8n
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   gotenberg:
     image: gotenberg/gotenberg:8
@@ -50,20 +33,15 @@ services:
       - "3000:3000"
     env_file:
       - ./frontend/.env
-    # Debe coincidir con usuario/clave/postgres definidos en .env.postgres
     environment:
-      DATABASE_URL: postgresql://tesis_user:tesis_secure_2026@postgres:5432/revision_tesis?schema=public
-      N8N_WEBHOOK_URL: http://n8n:5678/webhook-test/revision-tesis
+      DATABASE_URL: postgresql://postgres:fD5-JkLcxMYU8V2dhBE1@db.yeytdbzukgmsaogorrfj.supabase.co:5432/postgres
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/revision-tesis
       ARCHIVO_PUBLIC_BASE_URL: http://frontend:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
-    depends_on:
-      postgres:
-        condition: service_healthy
     command:
       - sh
       - -lc
       - npm run dev -- --hostname 0.0.0.0 --port 3000
 
 volumes:
-  postgres_data:
   n8n_data:
