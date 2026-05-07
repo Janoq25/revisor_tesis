@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +8,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
 
   try {
+    // Verificar sesión del usuario
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "No autorizado" },
+        { status: 401 }
+      );
+    }
+
     const tesis = await prisma.tesis.findUnique({
       where: { id },
       include: { revision: true }
@@ -14,6 +28,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     if (!tesis) {
       return NextResponse.json({ error: 'Tesis no encontrada' }, { status: 404 });
+    }
+
+    // Verificar que la tesis pertenece al usuario autenticado
+    if (tesis.usuarioId !== user.id) {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      );
     }
 
     // Prepare data

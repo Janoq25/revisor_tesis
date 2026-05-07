@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase-server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import path from "path";
 import { mkdir, writeFile } from "fs/promises";
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Verificar sesión del usuario
+    const supabaseServer = await createClient();
+    const {
+      data: { user },
+    } = await supabaseServer.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "No autorizado" },
+        { status: 401 }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as unknown as File;
-    const autor = formData.get("autor") as string || "Anónimo";
+    const autor = (formData.get("autor") as string) || "Anónimo";
 
     if (!file) {
-      return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "No file uploaded" },
+        { status: 400 }
+      );
     }
 
     // 1. Upload to Supabase Storage
@@ -57,6 +74,7 @@ export async function POST(req: NextRequest) {
     // 2. Save metadata to PostgreSQL via Prisma
     const tesis = await prisma.tesis.create({
       data: {
+        usuarioId: user.id,
         titulo: file.name.replace(`.${fileExt}`, ''),
         autor,
         archivoUrl,

@@ -1,12 +1,25 @@
 import React from 'react';
+import { createClient } from '@/lib/supabase-server';
 import { prisma } from '@/lib/prisma';
-import ReportesClient from './ReportesClient';
+import ReportesClient from '../reportes/ReportesClient';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic'; // Para que siempre obtenga los datos más recientes
+export const dynamic = 'force-dynamic';
 
 export default async function ReportesPage() {
-  // Fetch real data from the database
+  // Obtener el usuario autenticado
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Fetch only the user's tesis
   const tesisRecords = await prisma.tesis.findMany({
+    where: { usuarioId: user.id },
     include: { revision: true },
     orderBy: { createdAt: 'desc' },
   });
@@ -16,7 +29,6 @@ export default async function ReportesPage() {
     id: t.id,
     titulo: t.titulo,
     autor: t.autor,
-    // Si la tesis está en error, mostrarlo aunque no haya revisión. Si hay revisión, mostrar el estado general.
     estado: t.revision?.estadoGeneral || (t.estado === 'ERROR' ? 'Error' : t.estado),
     puntuacion: t.revision?.puntuacionGeneral || 0,
     fecha: t.createdAt.toISOString().split('T')[0],
@@ -29,7 +41,7 @@ export default async function ReportesPage() {
           Reportes de Revisión
         </h1>
         <p style={{ color: "#94a3b8", fontSize: "1.125rem" }}>
-          Historial completo de todas las tesis procesadas por el sistema IA.
+          Historial completo de todas tus tesis procesadas por el sistema IA.
         </p>
       </header>
 

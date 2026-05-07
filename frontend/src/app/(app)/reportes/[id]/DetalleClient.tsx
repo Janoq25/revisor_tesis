@@ -151,7 +151,7 @@ export default function DetalleClient({ reporte }: { reporte: ReporteData }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Título</span>
-                <p style={{ fontWeight: 600, lineHeight: 1.5, marginTop: '0.3rem', color: '#1e293b', fontSize: '0.875rem' }}>{reporte.tesis.titulo}</p>
+                <p style={{ display: 'flex', fontWeight: 600, lineHeight: 1.5, marginTop: '0.3rem', color: '#1e293b', fontSize: '0.875rem' }}>{reporte.tesis.titulo}</p>
               </div>
 
               <div>

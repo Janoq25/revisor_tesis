@@ -8,6 +8,7 @@ datasource db {
 
 model Tesis {
   id              String         @id @default(cuid())
+  usuarioId       String         // UUID de auth.users de Supabase
   titulo          String
   autor           String
   archivoUrl      String         // URL del archivo original (en Supabase)
@@ -18,6 +19,8 @@ model Tesis {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   revision        Revision?
+
+  @@index([usuarioId])
 }
 
 model Revision {

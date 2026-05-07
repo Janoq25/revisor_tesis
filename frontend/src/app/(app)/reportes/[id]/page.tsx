@@ -1,11 +1,21 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import DetalleClient from './DetalleClient';
 
 export default async function DetalleReportePage({ params }: { params: Promise<{ id: string }> }) {
-  // En Next.js 15+ params es una promesa. Si es Next.js 14, params es sincrono, pero hacer await params.id es seguro en ambos
   const { id } = await params;
+
+  // Obtener el usuario autenticado
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
   
   const tesis = await prisma.tesis.findUnique({
     where: { id },
@@ -16,16 +26,19 @@ export default async function DetalleReportePage({ params }: { params: Promise<{
     return notFound();
   }
 
+  // Verificar que la tesis pertenece al usuario autenticado
+  if (tesis.usuarioId !== user.id) {
+    return notFound();
+  }
+
   // Parse observaciones
   let observaciones = [];
   if (tesis.revision?.observaciones) {
     try {
-      // Prisma returns Json, which could be an object, string, or array.
       observaciones = typeof tesis.revision.observaciones === 'string' 
         ? JSON.parse(tesis.revision.observaciones) 
         : tesis.revision.observaciones;
       
-      // Asegurarse de que sea un array
       if (!Array.isArray(observaciones)) {
         observaciones = [observaciones];
       }

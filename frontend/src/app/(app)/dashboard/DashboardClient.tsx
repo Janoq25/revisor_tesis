@@ -17,7 +17,7 @@ export type DashboardData = {
   };
   approvalData: { name: string; value: number; color: string }[];
   sectionsData: { name: string; observaciones: number }[];
-  performanceData: { label: string; promedio: number }[];
+  performanceData?: { label: string; promedio: number }[];
 };
 
 const CHART_COLORS = ['#1abc9c', '#1dc4e9', '#a78bfa', '#f59e0b'];
@@ -155,7 +155,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       <div className="clean-card" style={{ height: '320px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <h3 style={{ marginBottom: '1.5rem', fontSize: '0.95rem', fontWeight: 600, color: '#1e293b' }}>Evolución del Rendimiento Promedio</h3>
         <div style={{ flex: 1, minHeight: 0, minWidth: 0, position: 'relative' }}>
-          {data.performanceData.length > 0 ? (
+          {(data.performanceData?.length ?? 0) > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.performanceData} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />

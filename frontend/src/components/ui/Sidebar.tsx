@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Upload, LayoutDashboard, FileText, Settings, BookOpen } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Upload, LayoutDashboard, FileText, LogOut, BookOpen } from "lucide-react";
 import React from "react";
+import { createClient } from "@/lib/supabase-client";
 
 const navItems = [
   { name: "Upload", href: "/", icon: Upload },
@@ -13,6 +14,17 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
 
   return (
     <aside style={{
@@ -89,10 +101,28 @@ export function Sidebar() {
           N
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ color: "white", fontSize: "0.9rem", fontFamily: "var(--font-poppins), sans-serif", fontWeight: 600 }}>Neuromancer</div>
-          <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontFamily: "var(--font-inter), sans-serif" }}>Admin</div>
+          <div style={{ color: "white", fontSize: "0.9rem", fontFamily: "var(--font-poppins), sans-serif", fontWeight: 600 }}>Usuario</div>
+          <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontFamily: "var(--font-inter), sans-serif" }}>Conectado</div>
         </div>
-        <Settings size={20} color="white" style={{ cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = 'rotate(90deg)'} onMouseLeave={e => e.currentTarget.style.transform = 'rotate(0)'} />
+        <button
+          onClick={handleSignOut}
+          style={{
+            background: "none",
+            border: "none",
+            color: "white",
+            cursor: "pointer",
+            transition: "transform 0.2s",
+            padding: "0.25rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          title="Cerrar sesión"
+        >
+          <LogOut size={20} color="white" />
+        </button>
       </div>
     </aside>
   );

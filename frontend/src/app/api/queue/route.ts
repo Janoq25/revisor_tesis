@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    // Verificar sesión del usuario
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "No autorizado" },
+        { status: 401 }
+      );
+    }
+
     const tesisList = await prisma.tesis.findMany({
       where: {
+        usuarioId: user.id,
         estado: {
           in: ['EN_COLA', 'PROCESANDO']
         },
